@@ -1,0 +1,144 @@
+/**
+ * Layout Styles
+ * App structure and main container layouts
+ */
+
+/* App Container */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header */
+.header {
+  background: var(--color-gradient);
+  color: var(--text-inverse);
+  padding: var(--space-md) var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--header-height);
+  flex-shrink: 0;
+  z-index: var(--z-sticky);
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.header__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: inherit;
+  white-space: nowrap;
+}
+
+.header__nav {
+  display: flex;
+  gap: var(--space-xs);
+  background: rgba(255, 255, 255, 0.15);
+  padding: var(--space-xs);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.header__actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* Keep buttons from collapsing when hidden */
+.header__actions .btn {
+  flex-shrink: 0;
+}
+
+/* Reserve space for action buttons to prevent layout shift */
+.header__actions::after {
+  content: '';
+  min-width: 200px;
+  display: none;
+}
+
+/* Tab Buttons */
+.tab-btn {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: rgba(255, 255, 255, 0.8);
+  transition: all var(--transition-fast);
+}
+
+.tab-btn:hover {
+  color: var(--text-inverse);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn.active {
+  background: var(--bg-surface);
+  color: var(--color-primary);
+}
+
+/* Main Content Area */
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* General Container */
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+}
+
+/* Flex Utilities */
+.flex {
+  display: flex;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-xs {
+  gap: var(--space-xs);
+}
+.gap-sm {
+  gap: var(--space-sm);
+}
+.gap-md {
+  gap: var(--space-md);
+}
+.gap-lg {
+  gap: var(--space-lg);
+}

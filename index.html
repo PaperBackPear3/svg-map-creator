@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Map Editor</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/map.css">
+    <link rel="stylesheet" href="css/panels.css">
+    <link rel="stylesheet" href="css/image-converter.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header__brand">
+                <h1 class="header__title">🗺️ SVG Map Editor</h1>
+            </div>
+            <nav class="header__nav">
+                <button class="tab-btn active" data-tab="editor">Editor</button>
+                <button class="tab-btn" data-tab="viewer">Viewer</button>
+                <button class="tab-btn" data-tab="converter">🖼️ Image to Map</button>
+            </nav>
+            <div class="header__actions">
+                <input type="file" id="fileInput" accept=".svg,image/svg+xml,text/xml" hidden>
+                <button class="btn btn--ghost" id="loadBtn">
+                    <span class="btn__icon">📂</span>
+                    <span class="btn__text">Load SVG</span>
+                </button>
+                <button class="btn btn--success" id="saveBtn" disabled>
+                    <span class="btn__icon">💾</span>
+                    <span class="btn__text">Save SVG</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Sidebar -->
+            <aside class="sidebar sidebar--left">
+                <!-- Statistics Section -->
+                <section class="sidebar__section">
+                    <h3 class="sidebar__title">📊 Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-item__label">Regions</span>
+                            <span class="stat-item__value" id="statTotalRegions">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item__label">Selected</span>
+                            <span class="stat-item__value" id="statSelectedCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item__label">Tags</span>
+                            <span class="stat-item__value" id="statTotalTags">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item__label">Named</span>
+                            <span class="stat-item__value" id="statNamedRegions">0</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Search Section -->
+                <section class="sidebar__section">
+                    <h3 class="sidebar__title">🔍 Search</h3>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search regions or tags...">
+                </section>
+
+                <!-- Selection Actions (Editor Mode) -->
+                <section class="sidebar__section" id="selectionSection">
+                    <h3 class="sidebar__title">✨ Selection</h3>
+                    <div class="btn-group">
+                        <button class="btn btn--sm btn--outline" id="selectAllBtn">Select All</button>
+                        <button class="btn btn--sm btn--outline" id="deselectAllBtn">Deselect</button>
+                        <button class="btn btn--sm btn--outline" id="invertSelectionBtn">Invert</button>
+                    </div>
+                </section>
+
+                <!-- Tag Editor Section (Editor Mode) -->
+                <section class="sidebar__section tag-editor" id="tagEditorSection">
+                    <h3 class="sidebar__title">🏷️ Add Tag</h3>
+                    <div class="form-row">
+                        <input type="text" class="form-input" id="tagKeyInput" placeholder="Key (e.g., cet)">
+                        <input type="text" class="form-input" id="tagValueInput" placeholder="Value (e.g., 10)">
+                    </div>
+                    <button class="btn btn--primary btn--block" id="applyTagBtn" disabled>
+                        Apply to Selected (<span id="applyTagCount">0</span>)
+                    </button>
+                </section>
+
+                <!-- Existing Tags Section (Editor Mode) -->
+                <section class="sidebar__section" id="editorTagsSection">
+                    <h3 class="sidebar__title">🏷️ Existing Tags</h3>
+                    <div class="btn-group btn-group--compact">
+                        <button class="btn btn--xs btn--ghost" id="editorExpandAllBtn">Expand</button>
+                        <button class="btn btn--xs btn--ghost" id="editorCollapseAllBtn">Collapse</button>
+                    </div>
+                    <p class="editor-tags-hint">👁️ Click to highlight · 🖌️ Paint mode</p>
+                    <div class="editor-tag-groups" id="editorTagGroupsContainer"></div>
+                </section>
+
+                <!-- Region Name Editor Section (Editor Mode) -->
+                <section class="sidebar__section" id="nameEditorSection">
+                    <h3 class="sidebar__title">📝 Region Details</h3>
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" id="regionNameInput" placeholder="Region name...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="regionDescInput"
+                            placeholder="Optional description..."></textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn--success btn--sm" id="saveRegionBtn">Save</button>
+                        <button class="btn btn--outline btn--sm" id="clearRegionBtn">Clear</button>
+                    </div>
+                </section>
+
+                <!-- Filter Section (Viewer Mode) -->
+                <section class="sidebar__section" id="filterSection" style="display: none;">
+                    <h3 class="sidebar__title">🎨 Filter by Tags</h3>
+                    <div class="btn-group btn-group--compact">
+                        <button class="btn btn--xs btn--primary" id="filterSelectAllBtn">All On</button>
+                        <button class="btn btn--xs btn--outline" id="filterDeselectAllBtn">All Off</button>
+                        <button class="btn btn--xs btn--ghost" id="expandAllBtn">Expand</button>
+                        <button class="btn btn--xs btn--ghost" id="collapseAllBtn">Collapse</button>
+                    </div>
+                    <div class="tag-groups" id="tagGroupsContainer"></div>
+                </section>
+
+                <!-- Selected Regions List -->
+                <section class="sidebar__section sidebar__section--flex" id="selectedListSection">
+                    <h3 class="sidebar__title">📋 Selected Regions</h3>
+                    <div class="region-list" id="selectedRegionsList">
+                        <p class="empty-message">Click regions on the map to select them</p>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Map Container -->
+            <div class="map-container" id="mapContainer">
+                <div class="map-placeholder" id="mapPlaceholder">
+                    <div class="map-placeholder__icon">🗺️</div>
+                    <p class="map-placeholder__text">Load an SVG file to begin</p>
+                    <button class="btn btn--primary" id="placeholderLoadBtn">
+                        <span class="btn__icon">📂</span>
+                        <span class="btn__text">Load SVG</span>
+                    </button>
+                </div>
+                <div class="map-svg" id="mapSvgContainer"></div>
+            </div>
+
+            <!-- Right Panel - Region Info -->
+            <aside class="panel panel--right" id="infoPanel">
+                <div class="panel__header">
+                    <h3 class="panel__title">Region Details</h3>
+                    <button class="btn btn--icon btn--danger" id="closeInfoPanelBtn">×</button>
+                </div>
+                <div class="panel__content" id="infoPanelContent"></div>
+            </aside>
+        </main>
+
+        <!-- Image to Map Converter Section -->
+        <section class="converter-section" id="converterSection">
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step converter-step" data-step="1">
+                    <span class="step__number">1</span>
+                    <span>Upload Image</span>
+                </div>
+                <div class="step converter-step" data-step="2">
+                    <span class="step__number">2</span>
+                    <span>Process</span>
+                </div>
+                <div class="step converter-step" data-step="3">
+                    <span class="step__number">3</span>
+                    <span>Export</span>
+                </div>
+            </div>
+
+            <!-- Upload Zone -->
+            <div class="upload-zone" id="converterUploadZone">
+                <input type="file" id="converterImageInput" accept="image/*" hidden>
+                <div class="upload-zone__icon">🖼️</div>
+                <div class="upload-zone__title">Drop an image here or click to upload</div>
+                <div class="upload-zone__subtitle">Supports PNG, JPG, WebP and other image formats</div>
+            </div>
+
+            <!-- Converter Workspace (hidden initially) -->
+            <div class="converter-workspace" id="converterWorkspace" style="display: none;">
+                <!-- Preview Panels -->
+                <div class="converter-preview-area">
+                    <!-- Preview Grid -->
+                    <div class="converter-preview">
+                        <!-- Original Image -->
+                        <div class="preview-panel">
+                            <div class="preview-panel__header">
+                                <span class="preview-panel__title">📷 Original</span>
+                            </div>
+                            <div class="preview-panel__content" id="originalPreview">
+                                <div class="preview-placeholder">Original image will appear here</div>
+                            </div>
+                        </div>
+
+                        <!-- Processed Image -->
+                        <div class="preview-panel">
+                            <div class="preview-panel__header">
+                                <span class="preview-panel__title">🔍 Edge Detection</span>
+                            </div>
+                            <div class="preview-panel__content" id="processedPreview">
+                                <div class="preview-placeholder">Processed image will appear here</div>
+                                <div class="processing-overlay hidden" id="processingOverlay">
+                                    <div class="processing-spinner"></div>
+                                    <div class="processing-text">Processing...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SVG Output Preview -->
+                    <div class="preview-panel" style="margin-top: var(--space-lg);">
+                        <div class="preview-panel__header">
+                            <span class="preview-panel__title">🗺️ SVG Output</span>
+                            <span class="preview-panel__badge" id="converterRegionBadge">0 regions</span>
+                        </div>
+                        <div class="preview-panel__content" id="svgPreview" style="min-height: 300px;">
+                            <div class="preview-placeholder">SVG output will appear here</div>
+                        </div>
+                    </div>
+
+                    <!-- Processing Pipeline Preview -->
+                    <div class="pipeline-preview" id="pipelinePreview"></div>
+                </div>
+
+                <!-- Controls Panel -->
+                <div class="converter-controls">
+                    <!-- Edge Detection Settings -->
+                    <div class="control-section">
+                        <h4 class="control-section__title">🔍 Edge Detection</h4>
+
+                        <div class="slider-control">
+                            <div class="slider-control__header">
+                                <span class="slider-control__label">Threshold</span>
+                                <span class="slider-control__value" id="edgeThresholdValue">50%</span>
+                            </div>
+                            <input type="range" id="edgeThreshold" min="10" max="90" value="50">
+                        </div>
+
+                        <div class="slider-control">
+                            <div class="slider-control__header">
+                                <span class="slider-control__label">Edge Radius</span>
+                                <span class="slider-control__value" id="edgeRadiusValue">2px</span>
+                            </div>
+                            <input type="range" id="edgeRadius" min="1" max="5" value="2">
+                        </div>
+                    </div>
+
+                    <!-- Preprocessing Settings -->
+                    <div class="control-section">
+                        <h4 class="control-section__title">⚙️ Preprocessing</h4>
+
+                        <label class="checkbox-control">
+                            <input type="checkbox" id="grayscaleCheck" checked>
+                            <span class="checkbox-control__label">Convert to Grayscale</span>
+                        </label>
+
+                        <label class="checkbox-control">
+                            <input type="checkbox" id="invertCheck" checked>
+                            <span class="checkbox-control__label">Invert (for dark edges)</span>
+                        </label>
+
+                        <div class="slider-control">
+                            <div class="slider-control__header">
+                                <span class="slider-control__label">Blur</span>
+                                <span class="slider-control__value" id="blurValue">1px</span>
+                            </div>
+                            <input type="range" id="blurAmount" min="0" max="5" value="1">
+                        </div>
+
+                        <div class="slider-control">
+                            <div class="slider-control__header">
+                                <span class="slider-control__label">Posterize</span>
+                                <span class="slider-control__value" id="posterizeValue">0 levels</span>
+                            </div>
+                            <input type="range" id="posterizeLevels" min="0" max="8" value="0">
+                        </div>
+                    </div>
+
+                    <!-- Contour Settings -->
+                    <div class="control-section">
+                        <h4 class="control-section__title">📐 Region Settings</h4>
+
+                        <div class="slider-control">
+                            <div class="slider-control__header">
+                                <span class="slider-control__label">Min Region Area</span>
+                                <span class="slider-control__value" id="minAreaValue">100px²</span>
+                            </div>
+                            <input type="range" id="minRegionArea" min="10" max="1000" value="100" step="10">
+                        </div>
+
+                        <div class="slider-control">
+                            <div class="slider-control__header">
+                                <span class="slider-control__label">Simplify Tolerance</span>
+                                <span class="slider-control__value" id="simplifyValue">2</span>
+                            </div>
+                            <input type="range" id="simplifyTolerance" min="0" max="10" value="2" step="0.5">
+                        </div>
+
+                        <div class="slider-control">
+                            <div class="slider-control__header">
+                                <span class="slider-control__label">Smoothing</span>
+                                <span class="slider-control__value" id="smoothingValue">0.5</span>
+                            </div>
+                            <input type="range" id="smoothingAmount" min="0" max="2" value="0.5" step="0.1">
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="control-section">
+                        <h4 class="control-section__title">📊 Statistics</h4>
+                        <div class="converter-stats" id="converterStats">
+                            <div class="converter-stats__item">
+                                <span class="converter-stats__label">Regions Found</span>
+                                <span class="converter-stats__value" id="converterRegionCount">0</span>
+                            </div>
+                            <div class="converter-stats__item">
+                                <span class="converter-stats__label">Largest Area</span>
+                                <span class="converter-stats__value" id="converterLargestArea">-</span>
+                            </div>
+                            <div class="converter-stats__item">
+                                <span class="converter-stats__label">Total Points</span>
+                                <span class="converter-stats__value" id="converterTotalPoints">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="control-section">
+                        <h4 class="control-section__title">🚀 Actions</h4>
+                        <div class="converter-actions">
+                            <button class="btn btn--primary" id="processImageBtn" disabled>
+                                <span class="btn__icon">⚡</span>
+                                <span class="btn__text">Re-Process</span>
+                            </button>
+                            <button class="btn btn--success" id="exportSvgBtn" disabled>
+                                <span class="btn__icon">💾</span>
+                                <span class="btn__text">Export SVG</span>
+                            </button>
+                            <button class="btn btn--outline" id="loadInEditorBtn" disabled>
+                                <span class="btn__icon">✏️</span>
+                                <span class="btn__text">Load in Editor</span>
+                            </button>
+                            <button class="btn btn--ghost" id="resetConverterBtn">
+                                <span class="btn__icon">🔄</span>
+                                <span class="btn__text">Reset</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Algorithm Info -->
+                    <div class="algorithm-info">
+                        <span class="algorithm-info__icon">💡</span>
+                        <span>Using Sobel edge detection + marching squares contour tracing</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/color.js"></script>
+    <script src="js/utils/dom.js"></script>
+    <script src="js/core/EventEmitter.js"></script>
+    <script src="js/core/Store.js"></script>
+    <script src="js/services/SVGParser.js"></script>
+    <script src="js/services/FileService.js"></script>
+    <script src="js/services/ImageConverter.js"></script>
+    <script src="js/components/Toast.js"></script>
+    <script src="js/components/RegionList.js"></script>
+    <script src="js/components/TagGroups.js"></script>
+    <script src="js/components/EditorTagGroups.js"></script>
+    <script src="js/components/InfoPanel.js"></script>
+    <script src="js/components/MapRenderer.js"></script>
+    <script src="js/components/ImageConverterUI.js"></script>
+    <script src="js/App.js"></script>
+    <script>
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new App();
+        });
+    </script>
+</body>
+
+</html>
